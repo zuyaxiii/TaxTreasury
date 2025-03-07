@@ -21,20 +21,17 @@ export const exportElementAsJpg = async (
   } = options;
 
   try {
-    // หา element ที่ต้องการ export
     const element = document.getElementById(elementId);
     if (!element) {
       throw new Error(`Element with ID "${elementId}" not found`);
     }
 
-    // เตรียม element สำหรับ export (เพิ่ม header หรือ watermark ถ้าต้องการ)
     const exportElement = prepareElementForExport(element, {
       includeHeader,
       addWatermark,
       watermarkText
     });
 
-    // สร้าง canvas จาก element
     const canvas = await html2canvas(exportElement, {
       scale,
       useCORS: true,
@@ -43,15 +40,12 @@ export const exportElementAsJpg = async (
       allowTaint: true
     });
 
-    // ลบ element ชั่วคราวถ้าสร้างใหม่
     if (exportElement !== element) {
       document.body.removeChild(exportElement);
     }
 
-    // แปลง canvas เป็น data URL แบบ JPEG
     const dataUrl = canvas.toDataURL('image/jpeg', quality);
 
-    // สร้าง link element สำหรับดาวน์โหลด
     downloadImage(dataUrl, `${filename}.jpg`);
 
     return Promise.resolve();
@@ -71,7 +65,6 @@ const prepareElementForExport = (
 ): HTMLElement => {
   const { includeHeader, addWatermark, watermarkText } = options;
   
-  // สร้าง element ใหม่สำหรับ export เสมอเพื่อหลีกเลี่ยงปัญหากับ hidden elements
   const exportWrapper = document.createElement('div');
   exportWrapper.id = 'temp-export-wrapper';
   exportWrapper.style.position = 'fixed';
@@ -79,17 +72,14 @@ const prepareElementForExport = (
   exportWrapper.style.top = '-9999px';
   exportWrapper.style.background = '#ffffff';
   exportWrapper.style.padding = '20px';
-  exportWrapper.style.width = `${originalElement.offsetWidth || 800}px`; // กำหนดความกว้างเริ่มต้นถ้า element เดิมไม่มีความกว้าง
+  exportWrapper.style.width = `${originalElement.offsetWidth || 800}px`;
   
-  // คัดลอกเนื้อหาจาก element เดิม และทำให้แสดงผล
   const contentClone = originalElement.cloneNode(true) as HTMLElement;
   
-  // ทำให้ element แสดงผล (ลบ class hidden)
   contentClone.classList.remove('hidden');
   contentClone.style.display = 'block';
   contentClone.style.visibility = 'visible';
   
-  // รับรองว่า children ทั้งหมดแสดงผล
   const allHiddenElements = contentClone.querySelectorAll('.hidden');
   allHiddenElements.forEach(el => {
     (el as HTMLElement).classList.remove('hidden');
@@ -97,7 +87,6 @@ const prepareElementForExport = (
     (el as HTMLElement).style.visibility = 'visible';
   });
   
-  // เพิ่มส่วนหัว (ถ้าต้องการ)
   if (includeHeader) {
     const header = document.createElement('div');
     header.style.marginBottom = '20px';
@@ -110,10 +99,8 @@ const prepareElementForExport = (
     exportWrapper.appendChild(header);
   }
   
-  // เพิ่มเนื้อหา
   exportWrapper.appendChild(contentClone);
   
-  // เพิ่มลายน้ำ (ถ้าต้องการ)
   if (addWatermark) {
     const watermark = document.createElement('div');
     watermark.style.position = 'absolute';
@@ -131,8 +118,7 @@ const prepareElementForExport = (
     `;
     exportWrapper.appendChild(watermark);
   }
-  
-  // เพิ่ม element ลงใน DOM
+
   document.body.appendChild(exportWrapper);
   
   return exportWrapper;
@@ -155,16 +141,12 @@ const downloadImage = (dataUrl: string, filename: string): void => {
   }, 100);
 };
 
-/**
- * ฟังก์ชันสำหรับ export element เป็นไฟล์ PDF (ต้องติดตั้ง jspdf และ jspdf-autotable ก่อน)
- * หมายเหตุ: คุณต้องติดตั้ง npm install jspdf jspdf-autotable
- */
+
 export const exportElementAsPdf = async (
   elementId: string,
   options: ExportOptions = {}
 ): Promise<void> => {
   try {
-    // โหลด jsPDF แบบ dynamic import เพื่อประหยัดขนาดไฟล์หากไม่ได้ใช้
     const jsPDFModule = await import('jspdf');
     const jsPDF = jsPDFModule.default;
     
@@ -175,17 +157,14 @@ export const exportElementAsPdf = async (
       throw new Error(`Element with ID "${elementId}" not found`);
     }
     
-    // เตรียม element สำหรับ export โดยใช้ฟังก์ชันเดียวกับ JPG
     const exportElement = prepareElementForExport(element, {
       includeHeader: options.includeHeader,
       addWatermark: options.addWatermark,
       watermarkText: options.watermarkText
     });
     
-    // สร้าง PDF ขนาด A4
     const pdf = new jsPDF('p', 'mm', 'a4');
     
-    // ใช้ html2canvas เพื่อแปลง element เป็นรูปภาพก่อน
     const canvas = await html2canvas(exportElement, {
       scale: options.scale || 2,
       useCORS: true,
@@ -193,22 +172,17 @@ export const exportElementAsPdf = async (
       backgroundColor: options.backgroundColor || '#ffffff'
     });
     
-    // ลบ element ชั่วคราวหลังจากใช้งานเสร็จ
     if (exportElement !== element) {
       document.body.removeChild(exportElement);
     }
-    
-    // คำนวณอัตราส่วนเพื่อให้พอดีกับหน้า A4
-    const imgWidth = 210; // A4 width in mm
+
+    const imgWidth = 210; 
     const imgHeight = (canvas.height * imgWidth) / canvas.width;
-    
-    // แปลง canvas เป็น data URL
+
     const imgData = canvas.toDataURL('image/jpeg', options.quality || 0.95);
     
-    // เพิ่มรูปลงใน PDF
     pdf.addImage(imgData, 'JPEG', 0, 0, imgWidth, imgHeight);
     
-    // บันทึกไฟล์ PDF
     pdf.save(`${filename}.pdf`);
     
     return Promise.resolve();

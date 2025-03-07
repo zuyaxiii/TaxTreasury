@@ -1,43 +1,115 @@
-import axios from 'axios';
-import { Condo } from '../types';
+import { NextResponse } from 'next/server';
 
-const API_URL = 'http://localhost:4000';
+export async function GET(request: Request) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get('id');
+    const name = searchParams.get('name');
+    
+    let url = 'https://taxbackend-production-b1dc.up.railway.app/condos';
 
-const api = axios.create({
-  baseURL: API_URL,
-  headers: {
-    'Content-Type': 'application/json',
-  },
-});
-
-export const condoApi = {
-  getAllCondos: async (): Promise<Condo[]> => {
-    const response = await api.get<Condo[]>('/condos');
-    return response.data;
-  },
-
-  getCondoById: async (id: string): Promise<Condo | null> => {
-    const response = await api.get<Condo>(`/condos/${id}`);
-    return response.data;
-  },
-
-  createCondo: async (condo: Condo): Promise<Condo> => {
-    const response = await api.post<Condo>('/condos', condo);
-    return response.data;
-  },
-
-  updateCondo: async (id: string, condo: Partial<Condo>): Promise<Condo | null> => {
-    const response = await api.put<Condo>(`/condos/${id}`, condo);
-    return response.data;
-  },
-
-  deleteCondo: async (id: string): Promise<Condo | null> => {
-    const response = await api.delete<Condo>(`/condos/${id}`);
-    return response.data;
-  },
-
-  searchCondosByName: async (name: string): Promise<Condo[]> => {
-    const response = await api.get<Condo[]>(`/condos/search/name?name=${encodeURIComponent(name)}`);
-    return response.data;
+    if (id) {
+      url = `${url}/${id}`;
+    } 
+    else if (name) {
+      url = `${url}/search/name?name=${encodeURIComponent(name)}`;
+    }
+    
+    const response = await fetch(url);
+    const data = await response.json();
+    
+    return NextResponse.json(data);
+  } catch (error) {
+    console.error('Error in GET:', error);
+    return NextResponse.json(
+      { error: 'Failed to fetch data' },
+      { status: 500 }
+    );
   }
-};
+}
+
+export async function POST(request: Request) {
+  try {
+    const body = await request.json();
+    
+    const response = await fetch('https://taxbackend-production-b1dc.up.railway.app/condos', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(body),
+    });
+    
+    const data = await response.json();
+    return NextResponse.json(data);
+  } catch (error) {
+    console.error('Error in POST:', error);
+    return NextResponse.json(
+      { error: 'Failed to create condo' },
+      { status: 500 }
+    );
+  }
+}
+
+export async function PUT(request: Request) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get('id');
+    
+    if (!id) {
+      return NextResponse.json(
+        { error: 'ID is required' },
+        { status: 400 }
+      );
+    }
+    
+    const body = await request.json();
+    
+    const response = await fetch(`https://taxbackend-production-b1dc.up.railway.app/condos/${id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(body),
+    });
+    
+    const data = await response.json();
+    return NextResponse.json(data);
+  } catch (error) {
+    console.error('Error in PUT:', error);
+    return NextResponse.json(
+      { error: 'Failed to update condo' },
+      { status: 500 }
+    );
+  }
+}
+
+export async function DELETE(request: Request) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get('id');
+    
+    if (!id) {
+      return NextResponse.json(
+        { error: 'ID is required' },
+        { status: 400 }
+      );
+    }
+    
+    const response = await fetch(`https://taxbackend-production-b1dc.up.railway.app/condos/${id}`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+    
+    const data = await response.json();
+    return NextResponse.json(data);
+  } catch (error) {
+    console.error('Error in DELETE:', error);
+    return NextResponse.json(
+      { error: 'Failed to delete condo' },
+      { status: 500 }
+    );
+  }
+}

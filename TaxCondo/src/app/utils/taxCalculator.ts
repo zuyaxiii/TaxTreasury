@@ -63,30 +63,35 @@ export const calculateTaxResults = (
   isRegisteredOverOneYear: boolean,
   registrationPeriod: number | null,
   transferFeeRate: number,
-  mortgageFeeRate: number
+  mortgageFeeRate: number,
+  isCorporate: boolean 
 ): TaxResults => {
   const baseForSpecificTax = Math.max(salePrice, assessedPrice);
   const transferFee = assessedPrice * transferFeeRate;
   const mortgageFee = loanAmount * mortgageFeeRate;
 
   let specificBusinessTax = 0;
-  const isExemptFromBusinessTax =
-    holdingPeriod > 5 ||
-    (isRegistered && isRegisteredOverOneYear);
+  let stampDuty = 0;
+  let totalIncomeTax = 0;
 
-  if (!isExemptFromBusinessTax) {
-    specificBusinessTax = baseForSpecificTax * 0.033;
+  if (isCorporate) {
+    specificBusinessTax = salePrice * 0.033;
+    totalIncomeTax = salePrice * 0.01;
+    stampDuty = 0; 
+  } else {
+    const isExemptFromBusinessTax =
+      holdingPeriod > 5 || (isRegistered && isRegisteredOverOneYear);
+
+    if (!isExemptFromBusinessTax) {
+      specificBusinessTax = baseForSpecificTax * 0.033;
+    }
+
+    stampDuty = specificBusinessTax === 0 ? salePrice * 0.005 : 0;
+    totalIncomeTax = calculateTax(assessedPrice, holdingPeriod);
   }
 
-  let stampDuty = specificBusinessTax === 0 ? salePrice * 0.005 : 0;
-  const totalIncomeTax = calculateTax(assessedPrice, holdingPeriod);
-
   const totalFees =
-    transferFee +
-    specificBusinessTax +
-    stampDuty +
-    totalIncomeTax +
-    mortgageFee;
+    transferFee + specificBusinessTax + stampDuty + totalIncomeTax + mortgageFee;
 
   return {
     transferFee,
@@ -96,7 +101,7 @@ export const calculateTaxResults = (
     withholdingTax: totalIncomeTax,
     mortgageFee,
     total: totalFees,
-    isExemptFromBusinessTax,
+    isExemptFromBusinessTax: isCorporate ? false : holdingPeriod > 5 || (isRegistered && isRegisteredOverOneYear),
     holdingPeriod,
     registrationPeriod,
   };

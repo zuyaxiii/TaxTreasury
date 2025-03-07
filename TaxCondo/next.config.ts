@@ -10,7 +10,6 @@ const nextConfig: NextConfig = {
   async headers() {
     return [
       {
-        // เพิ่ม path /treasury โดยเฉพาะ
         source: '/treasury/:path*',
         headers: [
           { key: 'Access-Control-Allow-Origin', value: '*' },

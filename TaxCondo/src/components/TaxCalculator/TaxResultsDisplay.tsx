@@ -1,5 +1,5 @@
 import React from "react";
-import { TaxResults, PaymentShares, DetailedPeriod } from "@/app/api/types";
+import { TaxResults, PaymentShares, DetailedPeriod, TaxValues } from "@/app/api/types";
 import { calculateShare } from "@/app/utils/taxCalculator";
 import {
   exportElementAsJpg,
@@ -12,13 +12,16 @@ interface TaxResultsDisplayProps {
   results: TaxResults | null;
   paymentShares: PaymentShares;
   detailedPeriod?: DetailedPeriod;
+  sellerType: "individual" | "corporate";
 }
 
 const TaxResultsDisplay: React.FC<TaxResultsDisplayProps> = ({
   results,
   paymentShares,
   detailedPeriod,
+  sellerType,
 }) => {
+  
   if (!results) return null;
 
   const formatCurrency = (amount: number) => {
@@ -48,6 +51,7 @@ const TaxResultsDisplay: React.FC<TaxResultsDisplayProps> = ({
     });
   };
 
+
   const transferFeeShares = calculateShare(
     results.transferFee,
     paymentShares.transferFee
@@ -64,11 +68,10 @@ const TaxResultsDisplay: React.FC<TaxResultsDisplayProps> = ({
     results.withholdingTax,
     paymentShares.withholdingTax
   );
-  const mortgageFeeShares = calculateShare(
-    results.mortgageFee,
-    paymentShares.mortgageFee
-  );
-
+  const mortgageFeeShares = {
+    buyer: results.mortgageFee,
+    seller: 0,
+  };
   const buyerTotal =
     transferFeeShares.buyer +
     specificTaxShares.buyer +
@@ -80,16 +83,22 @@ const TaxResultsDisplay: React.FC<TaxResultsDisplayProps> = ({
     transferFeeShares.seller +
     specificTaxShares.seller +
     stampDutyShares.seller +
-    withholdingTaxShares.seller +
-    mortgageFeeShares.seller;
+    withholdingTaxShares.seller;
 
   return (
     <>
-      <div className="mt-8 p-6 border rounded-lg bg-gray-50">
+      <div className="mt-8 p-6 border bg-white rounded-xl shadow-lg">
         <div className="mb-4">
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-xl font-semibold">ผลการคำนวณ</h2>
             <Image src={YoknewLogo} alt="ผลการคำนวณ" width={100} height={100} />
+          </div>
+
+          <div className="mb-2">
+            <p className="font-prompt">
+              <span className="font-medium">ประเภทผู้ขาย:</span>{" "}
+              {sellerType === "individual" ? "บุคคลธรรมดา" : "นิติบุคคล"}
+            </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -133,7 +142,7 @@ const TaxResultsDisplay: React.FC<TaxResultsDisplayProps> = ({
             <tbody>
               {[
                 {
-                  label: "ค่าธรรมเนียมการทำนิติกรรม (ค่าโอน)",
+                  label: "ค่าธรรมเนียมการทำนิติกรรม (ค่าโอน) (2%)",
                   value: results.transferFee,
                   buyer: transferFeeShares.buyer,
                   seller: transferFeeShares.seller,
@@ -151,7 +160,10 @@ const TaxResultsDisplay: React.FC<TaxResultsDisplayProps> = ({
                   seller: stampDutyShares.seller,
                 },
                 {
-                  label: "ภาษีเงินได้บุคคลธรรมดาของผู้ขาย (หัก ณ ที่จ่าย)",
+                  label:
+                    sellerType === "individual"
+                      ? "ภาษีเงินได้บุคคลธรรมดาของผู้ขาย (หัก ณ ที่จ่าย)"
+                      : "ภาษีเงินได้ของผู้ขาย (หัก ณ ที่จ่าย)",
                   value: results.withholdingTax,
                   buyer: withholdingTaxShares.buyer,
                   seller: withholdingTaxShares.seller,
@@ -295,43 +307,38 @@ const TaxResultsDisplay: React.FC<TaxResultsDisplayProps> = ({
       </div>
 
       <div id="property-form-buyer" className="hidden">
-        <div className="mt-8 p-6 border rounded-lg bg-gray-50">
-          <div className="mb-4">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-semibold">ผลการคำนวณสำหรับผู้ซื้อ</h2>
-              <div
-                style={{
-                  width: "100px",
-                  height: "70px",
-                  overflow: "hidden",
-                  position: "relative",
-                }}
-              >
-                <Image
-                  src={YoknewLogo}
-                  alt="ผลการคำนวณ"
-                  layout="fill"
-                  objectFit="contain"
-                />
-              </div>
-            </div>
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-xl font-semibold">ผลการคำนวณสำหรับผู้ซื้อ</h2>
+          <div
+            style={{
+              width: "100px",
+              height: "70px",
+              overflow: "hidden",
+              position: "relative",
+            }}
+          >
+            <Image
+              src={YoknewLogo}
+              alt="ผลการคำนวณ"
+              layout="fill"
+              objectFit="contain"
+            />
+          </div>
+        </div>
 
-            <div className="mb-4 flex justify-between items-center">
-              <p className="text-left">
-                ระยะเวลาถือครอง: {results.holdingPeriod} ปี
-                {detailedPeriod && (
-                  <span>
-                    {" "}
-                    ช่วงเวลา: {detailedPeriod.years} ปี {detailedPeriod.months}{" "}
-                    เดือน {detailedPeriod.days} วัน
-                  </span>
-                )}
-              </p>
-              <div className="flex items-center text-yellow-600">
-                <span className="mr-1">⚠️</span>
-                <p>การคำนวณดังกล่าวเป็นเพียงการคำนวณเบื้องต้นเท่านั้น</p>
-              </div>
-            </div>
+        <div className="mb-4 flex justify-between items-center">
+          <p className="text-left">
+            ระยะเวลาถือครอง: {results.holdingPeriod} ปี{" "}
+            {detailedPeriod && (
+              <span>
+                ช่วงเวลา: {detailedPeriod.years} ปี {detailedPeriod.months}{" "}
+                เดือน {detailedPeriod.days} วัน
+              </span>
+            )}
+          </p>
+          <div className="flex items-center text-yellow-600">
+            <span className="mr-1">⚠️</span>
+            <p>การคำนวณดังกล่าวเป็นเพียงการคำนวณเบื้องต้นเท่านั้น</p>
           </div>
         </div>
 
@@ -365,7 +372,9 @@ const TaxResultsDisplay: React.FC<TaxResultsDisplayProps> = ({
             </tr>
             <tr>
               <td className="p-2 border-b">
-                ภาษีเงินได้บุคคลธรรมดาของผู้ขาย (หัก ณ ที่จ่าย)
+                {sellerType === "individual"
+                  ? "ภาษีเงินได้บุคคลธรรมดาของผู้ขาย (หัก ณ ที่จ่าย)"
+                  : "ภาษีเงินได้ของผู้ขาย (หัก ณ ที่จ่าย)"}
               </td>
               <td className="p-2 border-b text-right">
                 {formatCurrency(withholdingTaxShares.buyer)}
@@ -386,8 +395,8 @@ const TaxResultsDisplay: React.FC<TaxResultsDisplayProps> = ({
           </tbody>
         </table>
         <div className="flex flex-col justify-end">
-          <div className="bg-yellow-300 text-black px-3 py-1 rounded-t-lg w-fit font-semibold">
-            หมายเหตุ: วิธีการคำนวณ
+          <div className="bg-yellow-300 text-black px-2 pt-1 pb-3 mt-4 rounded-t-lg w-fit font-semibold">
+            หมายเหตุ : วิธีการคำนวณ
           </div>
 
           <div className="border border-gray-300 bg-gray-100 p-4 rounded-b-lg col-span-2 text-sm">
@@ -450,7 +459,13 @@ const TaxResultsDisplay: React.FC<TaxResultsDisplayProps> = ({
 
         <div className="mb-4 flex justify-between items-center">
           <p className="text-left">
-            ระยะเวลาถือครอง: {results.holdingPeriod} ปี
+            ระยะเวลาถือครอง: {results.holdingPeriod} ปี{" "}
+            {detailedPeriod && (
+              <span>
+                ช่วงเวลา: {detailedPeriod.years} ปี {detailedPeriod.months}{" "}
+                เดือน {detailedPeriod.days} วัน
+              </span>
+            )}
           </p>
           <div className="flex items-center text-yellow-600">
             <span className="mr-1">⚠️</span>
@@ -491,7 +506,9 @@ const TaxResultsDisplay: React.FC<TaxResultsDisplayProps> = ({
             </tr>
             <tr>
               <td className="p-2 border-b">
-                ภาษีเงินได้บุคคลธรรมดาของผู้ขาย (หัก ณ ที่จ่าย)
+                {sellerType === "individual"
+                  ? "ภาษีเงินได้บุคคลธรรมดาของผู้ขาย (หัก ณ ที่จ่าย)"
+                  : "ภาษีเงินได้ของผู้ขาย (หัก ณ ที่จ่าย)"}
               </td>
               <td className="p-2 border-b text-right">
                 {formatCurrency(withholdingTaxShares.seller)}
@@ -512,8 +529,8 @@ const TaxResultsDisplay: React.FC<TaxResultsDisplayProps> = ({
           </tbody>
         </table>
         <div className="flex flex-col justify-end">
-          <div className="bg-yellow-300 text-black px-3 py-1 rounded-t-lg w-fit font-semibold">
-            หมายเหตุ: วิธีการคำนวณ
+          <div className="bg-yellow-300 text-black px-2 pt-1 pb-3 mt-4 rounded-t-lg w-fit font-semibold">
+            หมายเหตุ : วิธีการคำนวณ
           </div>
 
           <div className="border border-gray-300 bg-gray-100 p-4 rounded-b-lg col-span-2 text-sm">
@@ -555,7 +572,7 @@ const TaxResultsDisplay: React.FC<TaxResultsDisplayProps> = ({
       </div>
 
       <div id="property-form-all" className="hidden">
-      <div className="flex justify-between items-center mb-4">
+        <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-semibold">ผลการคำนวณสำหรับทั้งหมด</h2>
           <div
             style={{
@@ -631,7 +648,9 @@ const TaxResultsDisplay: React.FC<TaxResultsDisplayProps> = ({
             </tr>
             <tr>
               <td className="p-2 border-b">
-                ภาษีเงินได้บุคคลธรรมดาของผู้ขาย (หัก ณ ที่จ่าย)
+                {sellerType === "individual"
+                  ? "ภาษีเงินได้บุคคลธรรมดาของผู้ขาย (หัก ณ ที่จ่าย)"
+                  : "ภาษีเงินได้ของผู้ขาย (หัก ณ ที่จ่าย)"}
               </td>
               <td className="p-2 border-b text-right">
                 {formatCurrency(withholdingTaxShares.buyer)}
@@ -658,9 +677,9 @@ const TaxResultsDisplay: React.FC<TaxResultsDisplayProps> = ({
             </tr>
           </tbody>
         </table>
-        <div className="flex flex-col justify-end">
-          <div className="bg-yellow-300 text-black px-3 py-1 rounded-t-lg w-fit font-semibold">
-            หมายเหตุ: วิธีการคำนวณ
+        <div className="flex flex-col justify-end mt-4">
+          <div className="bg-yellow-300 text-black px-2 pt-1 pb-3 mt-4 rounded-t-lg w-fit font-semibold">
+            หมายเหตุ : วิธีการคำนวณ
           </div>
 
           <div className="border border-gray-300 bg-gray-100 p-4 rounded-b-lg col-span-2 text-sm">

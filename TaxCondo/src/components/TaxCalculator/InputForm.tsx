@@ -7,9 +7,14 @@ import Link from "next/link";
 interface InputFormProps {
   values: TaxValues;
   setValues: React.Dispatch<React.SetStateAction<TaxValues>>;
+  sellerType: "individual" | "corporate";
 }
 
-const InputForm: React.FC<InputFormProps> = ({ values, setValues }) => {
+const InputForm: React.FC<InputFormProps> = ({
+  values,
+  setValues,
+  sellerType,
+}) => {
   const [touched, setTouched] = useState<Record<string, boolean>>({});
 
   const handleChange = (
@@ -189,7 +194,7 @@ const InputForm: React.FC<InputFormProps> = ({ values, setValues }) => {
 
             <div>
               <label htmlFor="purchaseDate" className="block mb-1">
-                วันที่ผู้ขายเริ่มถือครองคอนโด
+                วันที่ผู้ขายเริ่มถือครอง
                 <span className="text-red-500">*</span>
               </label>
               <input
@@ -256,36 +261,42 @@ const InputForm: React.FC<InputFormProps> = ({ values, setValues }) => {
             </div>
 
             <div className="flex flex-col justify-end">
-              <label className="inline-flex items-center cursor-pointer mb-2">
-                <input
-                  type="checkbox"
-                  id="isRegistered"
-                  name="isRegistered"
-                  checked={values.isRegistered}
-                  onChange={handleChange}
-                  className="sr-only peer"
-                />
-                <div className="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer dark:bg-gray-700 peer-checked:bg-blue-600 peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all"></div>
-                <span className="ms-3 text-sm font-medium text-black">
-                  ผู้ขายมีชื่ออยู่ในทะเบียนบ้านของทรัพย์
-                </span>
-              </label>
+              {sellerType === "individual" && (
+                <div className="md:col-span-2">
+                  <div className="flex items-center mb-2">
+                    <label className="inline-flex items-center cursor-pointer mb-2">
+                      <input
+                        type="checkbox"
+                        id="isRegistered"
+                        name="isRegistered"
+                        checked={values.isRegistered}
+                        onChange={handleChange}
+                        className="sr-only peer"
+                      />
+                      <div className="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer dark:bg-gray-700 peer-checked:bg-blue-600 peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all"></div>
+                      <span className="ms-3 text-sm font-medium text-black">
+                        ผู้ขายมีชื่ออยู่ในทะเบียนบ้านของทรัพย์
+                      </span>
+                    </label>
+                  </div>
 
-              {values.isRegistered && (
-                <label className="inline-flex items-center cursor-pointer">
-                  <input
-                    type="checkbox"
-                    id="isRegisteredOverOneYear"
-                    name="isRegisteredOverOneYear"
-                    checked={values.isRegisteredOverOneYear}
-                    onChange={handleChange}
-                    className="sr-only peer"
-                  />
-                  <div className="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer dark:bg-gray-700 peer-checked:bg-blue-600 peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all"></div>
-                  <span className="ms-3 text-sm font-medium text-black">
-                    มีชื่อในทะเบียนบ้านเกิน 1 ปี
-                  </span>
-                </label>
+                  {values.isRegistered && (
+                    <label className="inline-flex items-center cursor-pointer">
+                      <input
+                        type="checkbox"
+                        id="isRegisteredOverOneYear"
+                        name="isRegisteredOverOneYear"
+                        checked={values.isRegisteredOverOneYear}
+                        onChange={handleChange}
+                        className="sr-only peer"
+                      />
+                      <div className="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer dark:bg-gray-700 peer-checked:bg-blue-600 peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all"></div>
+                      <span className="ms-3 text-sm font-medium text-black">
+                        มีชื่อในทะเบียนบ้านเกิน 1 ปี
+                      </span>
+                    </label>
+                  )}
+                </div>
               )}
             </div>
 

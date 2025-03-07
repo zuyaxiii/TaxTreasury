@@ -52,6 +52,7 @@ export interface TaxResults {
   isExemptFromBusinessTax: boolean;
   holdingPeriod: number;
   registrationPeriod: number | null;
+  sellerType?: "individual" | "corporate"; 
 }
 
 export interface DetailedPeriod {

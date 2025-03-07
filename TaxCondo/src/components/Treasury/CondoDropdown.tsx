@@ -7,7 +7,6 @@ interface CondoDropdownProps {
 
 const CondoDropdown: React.FC<CondoDropdownProps> = ({
   filteredCondos,
-  searchTerm,
   setSelectedCondo,
   setShowCondoDropdown,
 }) => {

@@ -1,10 +1,11 @@
 import { useState, useEffect, useMemo } from "react";
 import { Condo } from "@/app/api/types";
-import { condoApi } from "@/app/api/treasury/route";
 import PriceDisplay from "./PriceDisplay";
 import OptionsDropdown from "./OptionsDropdown";
 import SearchBar from "./SearchBar";
 import { useDebounce } from "@/app/utils/useDebounce";
+import { condoApi } from "@/lib/api";
+import Link from "next/link";
 
 function TreasuryContent() {
   const [data, setData] = useState<Condo[]>([]);
@@ -16,7 +17,7 @@ function TreasuryContent() {
   const [showOptionsDropdown, setShowOptionsDropdown] = useState(false);
   const [selectedLevel, setSelectedLevel] = useState<string>("");
   const [selectedUseType, setSelectedUseType] = useState<string>("");
-  
+
   const debouncedSearchTerm = useDebounce(searchTerm, 500);
 
   useEffect(() => {
@@ -27,8 +28,8 @@ function TreasuryContent() {
         setData(condoData);
         setError(null);
       } catch (err) {
-        console.error('Error fetching condos:', err);
-        setError('Failed to load condos. Please try again later.');
+        console.error("Error fetching condos:", err);
+        setError("Failed to load condos. Please try again later.");
       } finally {
         setLoading(false);
       }
@@ -36,18 +37,20 @@ function TreasuryContent() {
 
     fetchCondos();
   }, []);
-  
+
   useEffect(() => {
     if (debouncedSearchTerm.length > 0) {
       const fetchSearchResults = async () => {
         try {
           setLoading(true);
-          const searchResults = await condoApi.searchCondosByName(debouncedSearchTerm);
+          const searchResults = await condoApi.searchCondosByName(
+            debouncedSearchTerm
+          );
           setData(searchResults);
           setError(null);
         } catch (err) {
           console.error("Search error:", err);
-          setError('Failed to search condos');
+          setError("Failed to search condos");
         } finally {
           setLoading(false);
         }
@@ -56,7 +59,7 @@ function TreasuryContent() {
       fetchSearchResults();
     }
   }, [debouncedSearchTerm]);
-  
+
   const uniqueCondos = useMemo(() => {
     return Array.from(
       new Set(
@@ -66,19 +69,19 @@ function TreasuryContent() {
       )
     ).sort();
   }, [data]);
-  
+
   const filteredCondos = useMemo(() => {
     if (!searchTerm) return uniqueCondos;
     return uniqueCondos.filter((condo) =>
       condo.toLowerCase().includes(searchTerm.toLowerCase())
     );
   }, [searchTerm, uniqueCondos]);
-  
+
   const filteredOptions = useMemo(() => {
     if (!selectedCondo) return [];
     return data.filter((record) => record.CONDO_NAME === selectedCondo);
   }, [data, selectedCondo]);
-  
+
   const uniqueLevelAndUseTypes = useMemo(() => {
     return Array.from(
       new Set(
@@ -91,7 +94,7 @@ function TreasuryContent() {
       })
       .sort((a, b) => a.level.localeCompare(b.level));
   }, [filteredOptions]);
-  
+
   const selectedPrice = useMemo(() => {
     return data.find(
       (record) =>
@@ -104,7 +107,21 @@ function TreasuryContent() {
   return (
     <div className="min-h-screen bg-gray-50 py-8 px-4 flex justify-center items-center">
       <div className="max-w-2xl w-full bg-white rounded-xl shadow-lg p-6 space-y-6">
-        <h1 className="text-2xl font-bold text-gray-800">ราคาประเมินห้องชุด</h1>
+        <div className="flex justify-between items-center">
+
+          
+        <h1 className="text-2xl font-bold text-gray-800">
+            ราคาประเมินห้องชุด
+          </h1>
+          
+          <button
+            type="button"
+            className="focus:outline-none text-white bg-green-700 hover:bg-green-800 focus:ring-4 focus:ring-green-300 font-medium rounded-lg text-sm px-5 py-2.5"
+          >
+            <Link href="/">คำนวนภาษี</Link>
+          </button>
+
+        </div>
 
         <div className="relative">
           <SearchBar
